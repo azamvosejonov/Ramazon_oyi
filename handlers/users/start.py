@@ -10,7 +10,6 @@ from data.config import ADMINS
 import logging
 from loader import user_db
 
-# Toshkent uchun Ramazon taqvimi (saharlik va iftorlik vaqtlarini rasmga qarab yozildi)
 toshkent_vaqtlar = [
     (time(5, 40), time(18, 17)), (time(5, 38), time(18, 18)),
     (time(5, 37), time(18, 19)), (time(5, 35), time(18, 20)),
@@ -56,7 +55,7 @@ shahar_vaqt_farqlari = {
 async def send_notification():
     while True:
         now = datetime.now().time()
-        sana_index = datetime.now().day - 1  # Hozirgi kun bo'yicha indeks
+        sana_index = datetime.now().day - 1  
         if sana_index >= len(toshkent_vaqtlar):
             sana_index = len(toshkent_vaqtlar) - 1
 
