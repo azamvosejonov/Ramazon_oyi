@@ -6,6 +6,9 @@ from keyboards.inline.admin import menu_inline, menu_orqa,menu_boshqa
 from keyboards.default.duo import menu_buttons
 from aiogram.types import CallbackQuery
 from loader import dp, bot
+from data.config import ADMINS
+import logging
+from loader import user_db
 
 # Toshkent uchun Ramazon taqvimi (saharlik va iftorlik vaqtlarini rasmga qarab yozildi)
 toshkent_vaqtlar = [
@@ -86,6 +89,24 @@ async def bot_start(message: types.Message):
     matn = "Qaysi viloyat?"
     await message.answer(matn, reply_markup=menu_buttons)
     await message.answer(text, reply_markup=menu_inline)
+    telegram_id = message.from_user.id
+    username = message.from_user.username
+
+    if not user_db.select_user(telegram_id=telegram_id):
+        user_db.add_user(telegram_id=telegram_id, username=username)
+        logging.info(f"Foydalanuvchi qo'shildi telegram_id:{telegram_id} username: {username}")
+        await message.answer("Siz yangi foydalanuvchisiz!")
+
+        count = user_db.count_users()
+        for admin in ADMINS:
+            await dp.bot.send_message(
+                admin,
+                f"Telegram ID: {telegram_id}\n"
+                f"Username : {username}\n"
+                f"Toliq ismi :{message.from_user.full_name}\n"
+                f"Foydalanuvchi bazaga qo'shildi\n\n"
+                f"Bazada <b>{count}</b>  ta foydalanuvchi bor"
+            )
 
 
 @dp.callback_query_handler(lambda call: call.data in shahar_vaqt_farqlari.keys())
