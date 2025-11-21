@@ -8,24 +8,27 @@ if not BOT_TOKEN:
 # Global chat_id, agar kerak bo'lsa
 CHAT_ID = os.getenv('CHAT_ID')
 
+# Optional azan audio URL (used for prayer notifications)
+AZAN_AUDIO_URL = os.getenv('AZAN_AUDIO_URL', 'https://www.myinstants.com/en/instant/azan-9059/?utm_source=copy&utm_medium=share')
+
 # Cities
 CITIES = {
     # Shaharlar - Faqat O'zbekiston shaharlari
-    'tashkent': {'name': 'Toshkent shahri', 'country': 'uzbekistan'},
-    'samarkand': {'name': 'Samarqand shahri', 'country': 'uzbekistan'},
-    'bukhara': {'name': 'Buxoro shahri', 'country': 'uzbekistan'},
-    'khiva': {'name': 'Xiva shahri', 'country': 'uzbekistan'},
-    'andijan': {'name': 'Andijon shahri', 'country': 'uzbekistan'},
-    'namangan': {'name': 'Namangan shahri', 'country': 'uzbekistan'},
-    'ferghana': {'name': 'Farg\'ona shahri', 'country': 'uzbekistan'},
-    'nukus': {'name': 'Nukus shahri', 'country': 'uzbekistan'},
-    'urgench': {'name': 'Urganch shahri', 'country': 'uzbekistan'},
-    'navoi': {'name': 'Navoiy shahri', 'country': 'uzbekistan'},
-    'jizzakh': {'name': 'Jizzax shahri', 'country': 'uzbekistan'},
-    'gulistan': {'name': 'Guliston shahri', 'country': 'uzbekistan'},
-    'termez': {'name': 'Termiz shahri', 'country': 'uzbekistan'},
-    'karshi': {'name': 'Qarshi shahri', 'country': 'uzbekistan'},
-    'margilan': {'name': 'Marg\'ilon shahri', 'country': 'uzbekistan'}
+    'tashkent': {'name': 'Toshkent shahri', 'country': 'uzbekistan', 'api_name': 'Tashkent', 'api_country': 'Uzbekistan'},
+    'samarkand': {'name': 'Samarqand shahri', 'country': 'uzbekistan', 'api_name': 'Samarkand', 'api_country': 'Uzbekistan'},
+    'bukhara': {'name': 'Buxoro shahri', 'country': 'uzbekistan', 'api_name': 'Bukhara', 'api_country': 'Uzbekistan'},
+    'khiva': {'name': 'Xiva shahri', 'country': 'uzbekistan', 'api_name': 'Khiva', 'api_country': 'Uzbekistan'},
+    'andijan': {'name': 'Andijon shahri', 'country': 'uzbekistan', 'api_name': 'Andijan', 'api_country': 'Uzbekistan'},
+    'namangan': {'name': 'Namangan shahri', 'country': 'uzbekistan', 'api_name': 'Namangan', 'api_country': 'Uzbekistan'},
+    'ferghana': {'name': "Farg'ona shahri", 'country': 'uzbekistan', 'api_name': 'Fergana', 'api_country': 'Uzbekistan'},
+    'nukus': {'name': 'Nukus shahri', 'country': 'uzbekistan', 'api_name': 'Nukus', 'api_country': 'Uzbekistan'},
+    'urgench': {'name': 'Urganch shahri', 'country': 'uzbekistan', 'api_name': 'Urgench', 'api_country': 'Uzbekistan'},
+    'navoi': {'name': 'Navoiy shahri', 'country': 'uzbekistan', 'api_name': 'Navoi', 'api_country': 'Uzbekistan'},
+    'jizzakh': {'name': 'Jizzax shahri', 'country': 'uzbekistan', 'api_name': 'Jizzakh', 'api_country': 'Uzbekistan'},
+    'gulistan': {'name': 'Guliston shahri', 'country': 'uzbekistan', 'api_name': 'Gulistan', 'api_country': 'Uzbekistan'},
+    'termez': {'name': 'Termiz shahri', 'country': 'uzbekistan', 'api_name': 'Termez', 'api_country': 'Uzbekistan'},
+    'karshi': {'name': 'Qarshi shahri', 'country': 'uzbekistan', 'api_name': 'Karshi', 'api_country': 'Uzbekistan'},
+    'margilan': {'name': "Marg'ilon shahri", 'country': 'uzbekistan', 'api_name': 'Margilan', 'api_country': 'Uzbekistan'}
 }
 
 # Tarjimalar
@@ -54,6 +57,7 @@ translations = {
         'fasting_start_button': "🌅 Ro'za boshlash",
         'fasting_end_button': "🌇 Ro'za ochish",
         'not_ramadan': "Hozir Ramazon oyi emas. Iltimos, Ramazon oyida qaytadan urinib ko'ring.",
+        'prayer_notification': "🕌 Namoz vaqti keldi: {prayer}",
         'prayers': {
             'Fajr': 'Bomdod ',
             'Dhuhr': 'Peshin ',
@@ -87,6 +91,7 @@ translations = {
         'fasting_start_button': "🌅 Start Fasting",
         'fasting_end_button': "🌇 Break Fast",
         'not_ramadan': "It's not Ramadan month yet. Please try again during Ramadan.",
+        'prayer_notification': "🕌 Prayer time: {prayer}",
         'prayers': {
             'Fajr': 'Fajr ',
             'Dhuhr': 'Dhuhr ',
@@ -120,6 +125,7 @@ translations = {
         'fasting_start_button': "🌅 Начать пост",
         'fasting_end_button': "🌇 Разговение",
         'not_ramadan': "Сейчас не месяц Рамадан. Пожалуйста, попробуйте снова во время Рамадана.",
+        'prayer_notification': "🕌 Время намаза: {prayer}",
         'prayers': {
             'Fajr': 'Фаджр ',
             'Dhuhr': 'Зухр ',

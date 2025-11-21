@@ -121,8 +121,6 @@ async def send_prayer_notification(chat_id, prayer_name):
     prayer = translations[lang]['prayers'][prayer_name]
     text = translations[lang]['prayer_notification'].format(prayer=prayer)
     await send_message(chat_id, text)
-    azan = translations[lang]['azan']
-    await send_message(chat_id, azan)
 
 async def send_early_sahur(chat_id):
     from handlers import user_data

@@ -28,16 +28,36 @@ def strip_emojis(text):
 
 async def get_prayer_times(city_key):
     from config import CITIES
+
     try:
         city_info = CITIES[city_key]
     except KeyError:
-        city_info = CITIES['tashkent']  # Fallback
-    city = city_info['name']
-    country = city_info['country']
-    url = f"http://api.aladhan.com/v1/timingsByCity?city={city}&country={country}&method=2"
-    response = requests.get(url)
+        city_info = CITIES['tashkent']  # Fallback to Tashkent
+
+    city = city_info.get('api_name', city_info.get('name'))
+    country = city_info.get('api_country', city_info.get('country', 'Uzbekistan'))
+
+    if not city or not country:
+        raise ValueError(f"City configuration is missing required fields for '{city_key}'")
+
+    url = "http://api.aladhan.com/v1/timingsByCity"
+    params = {
+        'city': city,
+        'country': country,
+        'method': 2,
+        'school': 1,  # Hanafi (common in Uzbekistan)
+        'iso8601': True
+    }
+
+    response = requests.get(url, params=params, timeout=10)
+    response.raise_for_status()
     data = response.json()
-    timings = data['data']['timings']
+
+    try:
+        timings = data['data']['timings']
+    except (KeyError, TypeError):
+        raise ValueError(f"Prayer times API returned unexpected data for {city}/{country}: {data}")
+
     return timings
 
 def is_ramadan():
