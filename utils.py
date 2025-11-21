@@ -40,7 +40,7 @@ async def get_prayer_times(city_key):
     if not city or not country:
         raise ValueError(f"City configuration is missing required fields for '{city_key}'")
 
-    url = "http://api.aladhan.com/v1/timingsByCity"
+    url = "https://api.aladhan.com/v1/timingsByCity"
     params = {
         'city': city,
         'country': country,
