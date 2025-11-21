@@ -1,9 +1,37 @@
 import requests
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 from hijri_converter import Hijri
 from PIL import Image, ImageDraw, ImageFont
 from io import BytesIO
 import os
+import pytz
+
+
+TIMEZONE_NAME = os.getenv('TIMEZONE', 'Asia/Tashkent')
+LOCAL_TIMEZONE = pytz.timezone(TIMEZONE_NAME)
+
+
+def get_local_datetime():
+    return datetime.now(LOCAL_TIMEZONE)
+
+
+def get_local_time():
+    return get_local_datetime().time()
+
+
+def _get_target_datetime(target_time_str, reference_dt=None):
+    reference_dt = reference_dt or get_local_datetime()
+    h, m = map(int, target_time_str.split(':'))
+    target = reference_dt.replace(hour=h, minute=m, second=0, microsecond=0)
+    if target <= reference_dt:
+        target += timedelta(days=1)
+    return target
+
+
+def get_remaining_timedelta(target_time_str):
+    target_dt = _get_target_datetime(target_time_str)
+    now_dt = get_local_datetime()
+    return target_dt - now_dt
 
 def strip_emojis(text):
     import re
@@ -84,7 +112,7 @@ def get_ramadan_progress():
         return None
 
 def get_next_prayer(timings):
-    now = datetime.now().time()
+    now = get_local_time()
     prayers = [
         ('Fajr', timings['Fajr']),
         ('Dhuhr', timings['Dhuhr']),
@@ -102,13 +130,9 @@ def get_next_prayer(timings):
     return 'Fajr', timings['Fajr']
 
 def calculate_remaining_time(target_time_str):
-    now = datetime.now()
-    h, m = map(int, target_time_str.split(':'))
-    target = now.replace(hour=h, minute=m, second=0, microsecond=0)
-    if target < now:
-        target = target.replace(day=now.day + 1)
-    diff = target - now
-    hours, remainder = divmod(diff.seconds, 3600)
+    diff = get_remaining_timedelta(target_time_str)
+    total_seconds = int(diff.total_seconds())
+    hours, remainder = divmod(total_seconds, 3600)
     minutes = remainder // 60
     return f"{hours} soat {minutes} daqiqa"
 
