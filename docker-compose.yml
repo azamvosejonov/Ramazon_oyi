@@ -1,0 +1,9 @@
+services:
+  ramazon-bot:
+    build: .
+    environment:
+      - BOT_TOKEN=${BOT_TOKEN}
+      - CHAT_ID=${CHAT_ID}
+      - ADMIN_ID=${ADMIN_ID}
+    volumes:
+      - ./user_data.json:/app/user_data.json  # To persist user data
