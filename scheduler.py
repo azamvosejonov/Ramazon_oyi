@@ -9,9 +9,9 @@ from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
 import pytz
 from config import translations, BOT_TOKEN, CITIES
-from utils import get_prayer_times, is_ramadan, generate_next_prayer_image
-from telegram import Bot, InlineKeyboardMarkup, InlineKeyboardButton
-from telegram.error import TelegramError
+from utils import get_prayer_times, is_ramadan, generate_next_prayer_image, generate_dua_image
+from telegram import Bot, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
+from telegram.error import TelegramError, BadRequest
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -334,7 +334,7 @@ async def schedule_daily_tasks(user_data=None):
     if 'Imsak' in timings:
         imsak_h, imsak_m = map(int, timings['Imsak'].split(':'))
         scheduler.add_job(
-            lambda: asyncio.run(send_fasting_start(CHAT_ID)), 
+            lambda: send_fasting_start(CHAT_ID), 
             CronTrigger(hour=imsak_h, minute=imsak_m), 
             id='fasting_start', 
             replace_existing=True
@@ -345,7 +345,7 @@ async def schedule_daily_tasks(user_data=None):
         imsak_dt = datetime.combine(date.today(), time(imsak_h, imsak_m))
         late_dt = imsak_dt + timedelta(minutes=30)
         scheduler.add_job(
-            lambda: asyncio.run(send_late_fasting_start(CHAT_ID)), 
+            lambda: send_late_fasting_start(CHAT_ID), 
             CronTrigger(hour=late_dt.hour, minute=late_dt.minute), 
             id='late_fasting_start', 
             replace_existing=True
@@ -359,7 +359,7 @@ async def schedule_daily_tasks(user_data=None):
         maghrib_dt = datetime.combine(date.today(), time(maghrib_h, maghrib_m))
         early_iftar_dt = maghrib_dt - timedelta(minutes=2)
         scheduler.add_job(
-            lambda: asyncio.run(send_early_iftar(CHAT_ID)), 
+            lambda: send_early_iftar(CHAT_ID), 
             CronTrigger(hour=early_iftar_dt.hour, minute=early_iftar_dt.minute), 
             id='early_iftar', 
             replace_existing=True
@@ -367,7 +367,7 @@ async def schedule_daily_tasks(user_data=None):
         
         # Fasting end at maghrib
         scheduler.add_job(
-            lambda: asyncio.run(send_fasting_end(CHAT_ID)), 
+            lambda: send_fasting_end(CHAT_ID), 
             CronTrigger(hour=maghrib_h, minute=maghrib_m), 
             id='fasting_end', 
             replace_existing=True
@@ -384,7 +384,7 @@ async def schedule_prayer_notifications():
     for prayer, t in prayers:
         h, m = map(int, t.split(':'))
         scheduler.add_job(
-            lambda p=prayer: asyncio.run(send_prayer_notification(CHAT_ID, p)),
+            lambda p=prayer: send_prayer_notification(CHAT_ID, p),
             CronTrigger(hour=h, minute=m),
             id=f'prayer_{prayer}',
             replace_existing=True

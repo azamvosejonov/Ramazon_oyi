@@ -43,25 +43,38 @@ async def delete_previous_message(chat_id, context):
 async def start(update, context):
     chat_id = update.effective_chat.id
     
-    # Store the current message ID for future deletion
-    if update.message:
-        last_messages[chat_id] = update.message.message_id
-    
-    # Delete previous bot message if exists
-    await delete_previous_message(chat_id, context)
-    profile = user_data.setdefault(str(chat_id), {})
-    lang = user_data.get(str(chat_id), {}).get('lang', 'uz')
-    
-    # Create language selection keyboard with only supported languages
-    keyboard = [
-        [InlineKeyboardButton("O'zbek", callback_data='lang_uz')],
-        [InlineKeyboardButton("English", callback_data='lang_en')],
-        [InlineKeyboardButton("Русский", callback_data='lang_ru')]
-    ]
-    
-    reply_markup = InlineKeyboardMarkup(keyboard)
-    message = await update.message.reply_text(translations[lang]['start_msg'], reply_markup=reply_markup)
-    last_messages[chat_id] = message.message_id
+    try:
+        # Store the current message ID for future deletion
+        if update.message:
+            last_messages[chat_id] = update.message.message_id
+        
+        # Delete previous bot message if exists
+        await delete_previous_message(chat_id, context)
+        profile = user_data.setdefault(str(chat_id), {})
+        lang = user_data.get(str(chat_id), {}).get('lang', 'uz')
+        
+        # Create language selection keyboard with only supported languages
+        keyboard = [
+            [InlineKeyboardButton("O'zbek", callback_data='lang_uz')],
+            [InlineKeyboardButton("English", callback_data='lang_en')],
+            [InlineKeyboardButton("Русский", callback_data='lang_ru')]
+        ]
+        
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        message = await update.message.reply_text(translations[lang]['start_msg'], reply_markup=reply_markup)
+        last_messages[chat_id] = message.message_id
+        
+    except Exception as e:
+        logger.error(f"Error in start command for chat {chat_id}: {e}", exc_info=True)
+        # Fallback: try to send a simple message
+        try:
+            await update.message.reply_text("Salom! Tilni tanlang:", reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("O'zbek", callback_data='lang_uz')],
+                [InlineKeyboardButton("English", callback_data='lang_en')],
+                [InlineKeyboardButton("Русский", callback_data='lang_ru')]
+            ]))
+        except Exception as e2:
+            logger.error(f"Fallback also failed for chat {chat_id}: {e2}", exc_info=True)
 
 async def button(update, context):
     query = update.callback_query
