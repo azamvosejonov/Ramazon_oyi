@@ -30,7 +30,6 @@ def init_scheduler():
     if scheduler is None or not scheduler.running:
         scheduler = AsyncIOScheduler(
             timezone=pytz.timezone('Asia/Tashkent'),
-            event_loop=asyncio.get_event_loop(),
             job_defaults={
                 'coalesce': True,  # Only run once if multiple triggers are missed
                 'max_instances': 1,  # Only one instance of each job at a time
@@ -116,6 +115,7 @@ async def send_fasting_end(chat_id):
     await send_message(chat_id, text, image_url=image_url)
 
 async def send_prayer_notification(chat_id, prayer_name):
+    logger.info(f"Sending prayer notification to {chat_id} for {prayer_name}")
     from handlers import user_data
     lang = user_data.get(str(chat_id), {}).get('lang', 'uz')
     prayer = translations[lang]['prayers'][prayer_name]
@@ -384,6 +384,7 @@ async def schedule_daily_tasks(user_data=None):
 
 async def schedule_prayer_notifications():
     global user_data_cache
+    logger.info("Scheduling prayer notifications for all users")
     # Schedule prayer notifications for all users
     for user_id, user_info in user_data_cache.items():
         # Skip non-user entries (like notif_settings)
@@ -405,5 +406,6 @@ async def schedule_prayer_notifications():
                     id=f'prayer_{prayer}_{chat_id}',
                     replace_existing=True
                 )
+                logger.info(f"Scheduled prayer notification for user {chat_id}, prayer {prayer} at {h}:{m}")
         except Exception as e:
             logger.error(f"Error scheduling prayer notifications for user {user_id}: {e}")

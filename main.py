@@ -33,14 +33,17 @@ if __name__ == "__main__":
     try:
         # Initialize bot with post_init callback
         async def post_init_callback(application):
+            logger.info("Post-init callback started")
             # Initialize scheduler now that we have an event loop
             global scheduler
             scheduler = init_scheduler()
             scheduler.start()
+            logger.info("Scheduler started")
             
             # Schedule initial tasks
             from handlers import user_data
             await schedule_daily_tasks(user_data)
+            logger.info("Daily tasks scheduled")
         
         application = (
             Application.builder()
