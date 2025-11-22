@@ -288,12 +288,16 @@ async def update_iftar_messages():
 async def schedule_daily_tasks(user_data=None):
     """Schedule daily tasks for all users with optimized settings"""
     global user_data_cache
+    logger.info(f"Scheduling daily tasks for user_data: {user_data is not None}")
     
     if user_data is not None:
         user_data_cache = user_data
+        logger.info(f"User data cache updated with {len(user_data_cache)} entries")
     
     # Clear existing jobs
-    for job in scheduler.get_jobs():
+    jobs = scheduler.get_jobs()
+    logger.info(f"Clearing {len(jobs)} existing jobs")
+    for job in jobs:
         job.remove()
     
     # Schedule menu updates less frequently (every 15 minutes)
@@ -324,9 +328,12 @@ async def schedule_daily_tasks(user_data=None):
     )
     
     # Schedule prayer notifications
+    logger.info("About to schedule prayer notifications")
     await schedule_prayer_notifications()
+    logger.info("Prayer notifications scheduled")
     
     # Schedule fasting notifications for all users
+    logger.info(f"Scheduling fasting notifications for {len(user_data_cache)} users")
     for user_id, user_info in user_data_cache.items():
         # Skip non-user entries (like notif_settings)
         if not user_id.isdigit():
