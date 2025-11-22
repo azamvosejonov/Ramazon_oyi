@@ -326,66 +326,84 @@ async def schedule_daily_tasks(user_data=None):
     # Schedule prayer notifications
     await schedule_prayer_notifications()
     
-    # Get prayer times for scheduling
-    city_key = user_data_cache.get(str(CHAT_ID), {}).get('city', 'tashkent')
-    timings = await get_prayer_times(city_key)
-    
-    # Schedule fasting start at imsak
-    if 'Imsak' in timings:
-        imsak_h, imsak_m = map(int, timings['Imsak'].split(':'))
-        scheduler.add_job(
-            lambda: send_fasting_start(CHAT_ID), 
-            CronTrigger(hour=imsak_h, minute=imsak_m), 
-            id='fasting_start', 
-            replace_existing=True
-        )
-        
-        # Late reminder: 30 minutes after imsak
-        from datetime import datetime, time, timedelta, date
-        imsak_dt = datetime.combine(date.today(), time(imsak_h, imsak_m))
-        late_dt = imsak_dt + timedelta(minutes=30)
-        scheduler.add_job(
-            lambda: send_late_fasting_start(CHAT_ID), 
-            CronTrigger(hour=late_dt.hour, minute=late_dt.minute), 
-            id='late_fasting_start', 
-            replace_existing=True
-        )
-    
-    # Schedule iftar and related times
-    if 'Maghrib' in timings:
-        maghrib_h, maghrib_m = map(int, timings['Maghrib'].split(':'))
-        
-        # Early iftar: 2 minutes before maghrib
-        maghrib_dt = datetime.combine(date.today(), time(maghrib_h, maghrib_m))
-        early_iftar_dt = maghrib_dt - timedelta(minutes=2)
-        scheduler.add_job(
-            lambda: send_early_iftar(CHAT_ID), 
-            CronTrigger(hour=early_iftar_dt.hour, minute=early_iftar_dt.minute), 
-            id='early_iftar', 
-            replace_existing=True
-        )
-        
-        # Fasting end at maghrib
-        scheduler.add_job(
-            lambda: send_fasting_end(CHAT_ID), 
-            CronTrigger(hour=maghrib_h, minute=maghrib_m), 
-            id='fasting_end', 
-            replace_existing=True
-        )
+    # Schedule fasting notifications for all users
+    for user_id, user_info in user_data_cache.items():
+        # Skip non-user entries (like notif_settings)
+        if not user_id.isdigit():
+            continue
+
+        try:
+            chat_id = int(user_id)
+            city_key = user_info.get('city', 'tashkent')
+            timings = await get_prayer_times(city_key)
+            
+            # Schedule fasting start at imsak
+            if 'Imsak' in timings:
+                imsak_h, imsak_m = map(int, timings['Imsak'].split(':'))
+                scheduler.add_job(
+                    lambda cid=chat_id: send_fasting_start(cid), 
+                    CronTrigger(hour=imsak_h, minute=imsak_m), 
+                    id=f'fasting_start_{chat_id}', 
+                    replace_existing=True
+                )
+                
+                # Late reminder: 30 minutes after imsak
+                from datetime import datetime, time, timedelta, date
+                imsak_dt = datetime.combine(date.today(), time(imsak_h, imsak_m))
+                late_dt = imsak_dt + timedelta(minutes=30)
+                scheduler.add_job(
+                    lambda cid=chat_id: send_late_fasting_start(cid), 
+                    CronTrigger(hour=late_dt.hour, minute=late_dt.minute), 
+                    id=f'late_fasting_start_{chat_id}', 
+                    replace_existing=True
+                )
+            
+            # Schedule iftar and related times
+            if 'Maghrib' in timings:
+                maghrib_h, maghrib_m = map(int, timings['Maghrib'].split(':'))
+                
+                # Early iftar: 2 minutes before maghrib
+                maghrib_dt = datetime.combine(date.today(), time(maghrib_h, maghrib_m))
+                early_iftar_dt = maghrib_dt - timedelta(minutes=2)
+                scheduler.add_job(
+                    lambda cid=chat_id: send_early_iftar(cid), 
+                    CronTrigger(hour=early_iftar_dt.hour, minute=early_iftar_dt.minute), 
+                    id=f'early_iftar_{chat_id}', 
+                    replace_existing=True
+                )
+                
+                # Fasting end at maghrib
+                scheduler.add_job(
+                    lambda cid=chat_id: send_fasting_end(cid), 
+                    CronTrigger(hour=maghrib_h, minute=maghrib_m), 
+                    id=f'fasting_end_{chat_id}', 
+                    replace_existing=True
+                )
+        except Exception as e:
+            logger.error(f"Error scheduling fasting notifications for user {user_id}: {e}")
 
 async def schedule_prayer_notifications():
     global user_data_cache
-    # Use the cached user data
-    city_key = user_data_cache.get(str(CHAT_ID), {}).get('city', 'tashkent')
-    timings = await get_prayer_times(city_key)
-    
-    # Prayer notifications
-    prayers = [('Fajr', timings['Fajr']), ('Dhuhr', timings['Dhuhr']), ('Asr', timings['Asr']), ('Maghrib', timings['Maghrib']), ('Isha', timings['Isha'])]
-    for prayer, t in prayers:
-        h, m = map(int, t.split(':'))
-        scheduler.add_job(
-            lambda p=prayer: send_prayer_notification(CHAT_ID, p),
-            CronTrigger(hour=h, minute=m),
-            id=f'prayer_{prayer}',
-            replace_existing=True
-        )
+    # Schedule prayer notifications for all users
+    for user_id, user_info in user_data_cache.items():
+        # Skip non-user entries (like notif_settings)
+        if not user_id.isdigit():
+            continue
+
+        try:
+            chat_id = int(user_id)
+            city_key = user_info.get('city', 'tashkent')
+            timings = await get_prayer_times(city_key)
+
+            # Prayer notifications
+            prayers = [('Fajr', timings['Fajr']), ('Dhuhr', timings['Dhuhr']), ('Asr', timings['Asr']), ('Maghrib', timings['Maghrib']), ('Isha', timings['Isha'])]
+            for prayer, t in prayers:
+                h, m = map(int, t.split(':'))
+                scheduler.add_job(
+                    lambda p=prayer, cid=chat_id: send_prayer_notification(cid, p),
+                    CronTrigger(hour=h, minute=m),
+                    id=f'prayer_{prayer}_{chat_id}',
+                    replace_existing=True
+                )
+        except Exception as e:
+            logger.error(f"Error scheduling prayer notifications for user {user_id}: {e}")
