@@ -24,14 +24,28 @@ logging.getLogger('telegram').setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+# Global scheduler variable
+scheduler = None
+
 if __name__ == "__main__":
     from config import BOT_TOKEN
 
     try:
-        # Initialize bot
+        # Initialize bot with post_init callback
+        async def post_init_callback(application):
+            # Initialize scheduler now that we have an event loop
+            global scheduler
+            scheduler = init_scheduler()
+            scheduler.start()
+            
+            # Schedule initial tasks
+            from handlers import user_data
+            await schedule_daily_tasks(user_data)
+        
         application = (
             Application.builder()
             .token(BOT_TOKEN)
+            .post_init(post_init_callback)
             .build()
         )
 
@@ -40,17 +54,6 @@ if __name__ == "__main__":
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
         application.add_handler(CommandHandler('admin', admin_command))
         application.add_handler(CallbackQueryHandler(button))
-
-        # Initialize scheduler in the same event loop
-        scheduler = init_scheduler()
-        
-        # Schedule initial tasks
-        from handlers import user_data
-        import asyncio
-        asyncio.create_task(schedule_daily_tasks(user_data))
-        
-        # Start the scheduler
-        scheduler.start()
 
         logger.info("Starting bot...")
         application.run_polling(
