@@ -13,9 +13,7 @@ from utils import get_prayer_times, is_ramadan, generate_next_prayer_image, gene
 from telegram import Bot, InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto
 from telegram.error import TelegramError, BadRequest
 
-# Configure logging
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)  # Reduce scheduler logging level
 
 # Initialize bot
 bot = Bot(token=BOT_TOKEN)
@@ -348,8 +346,9 @@ async def schedule_daily_tasks(user_data=None):
             if 'Imsak' in timings:
                 imsak_h, imsak_m = map(int, timings['Imsak'].split(':'))
                 scheduler.add_job(
-                    lambda cid=chat_id: send_fasting_start(cid), 
+                    send_fasting_start,
                     CronTrigger(hour=imsak_h, minute=imsak_m), 
+                    args=[chat_id],
                     id=f'fasting_start_{chat_id}', 
                     replace_existing=True
                 )
@@ -359,8 +358,9 @@ async def schedule_daily_tasks(user_data=None):
                 imsak_dt = datetime.combine(date.today(), time(imsak_h, imsak_m))
                 late_dt = imsak_dt + timedelta(minutes=30)
                 scheduler.add_job(
-                    lambda cid=chat_id: send_late_fasting_start(cid), 
+                    send_late_fasting_start,
                     CronTrigger(hour=late_dt.hour, minute=late_dt.minute), 
+                    args=[chat_id],
                     id=f'late_fasting_start_{chat_id}', 
                     replace_existing=True
                 )
@@ -373,16 +373,18 @@ async def schedule_daily_tasks(user_data=None):
                 maghrib_dt = datetime.combine(date.today(), time(maghrib_h, maghrib_m))
                 early_iftar_dt = maghrib_dt - timedelta(minutes=2)
                 scheduler.add_job(
-                    lambda cid=chat_id: send_early_iftar(cid), 
+                    send_early_iftar,
                     CronTrigger(hour=early_iftar_dt.hour, minute=early_iftar_dt.minute), 
+                    args=[chat_id],
                     id=f'early_iftar_{chat_id}', 
                     replace_existing=True
                 )
                 
                 # Fasting end at maghrib
                 scheduler.add_job(
-                    lambda cid=chat_id: send_fasting_end(cid), 
+                    send_fasting_end,
                     CronTrigger(hour=maghrib_h, minute=maghrib_m), 
+                    args=[chat_id],
                     id=f'fasting_end_{chat_id}', 
                     replace_existing=True
                 )
@@ -408,8 +410,9 @@ async def schedule_prayer_notifications():
             for prayer, t in prayers:
                 h, m = map(int, t.split(':'))
                 scheduler.add_job(
-                    lambda p=prayer, cid=chat_id: send_prayer_notification(cid, p),
+                    send_prayer_notification,
                     CronTrigger(hour=h, minute=m),
+                    args=[chat_id, prayer],
                     id=f'prayer_{prayer}_{chat_id}',
                     replace_existing=True
                 )

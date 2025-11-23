@@ -9,7 +9,7 @@ from scheduler import schedule_daily_tasks, init_scheduler
 # Configure logging
 logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
-    level=logging.WARNING,  # Only show warnings and above by default
+    level=logging.INFO,  # Show info and above
     handlers=[
         logging.StreamHandler()
     ]
