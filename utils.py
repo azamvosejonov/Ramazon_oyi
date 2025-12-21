@@ -74,7 +74,6 @@ async def get_prayer_times(city_key):
         'country': country,
         'method': 2,
         'school': 1,  # Hanafi (common in Uzbekistan)
-        'iso8601': True
     }
 
     response = requests.get(url, params=params, timeout=10)
@@ -86,29 +85,49 @@ async def get_prayer_times(city_key):
     except (KeyError, TypeError):
         raise ValueError(f"Prayer times API returned unexpected data for {city}/{country}: {data}")
 
-    return timings
+    # Clean up times - remove timezone info if present (e.g., "05:30 (+05)" -> "05:30")
+    cleaned_timings = {}
+    for key, value in timings.items():
+        if isinstance(value, str) and ' ' in value:
+            cleaned_timings[key] = value.split(' ')[0]
+        else:
+            cleaned_timings[key] = value
+    
+    return cleaned_timings
 
 def is_ramadan():
+    """Ramazon oyini hijri_converter yordamida dinamik aniqlash"""
+    from hijri_converter import Gregorian
     from datetime import date
     today = date.today()
-    # Ramadan 2024: March 12 - April 9
-    ramadan_start = date(2024, 3, 12)
-    ramadan_end = date(2024, 4, 9)
-    return ramadan_start <= today <= ramadan_end  # Or assume based on date
+    hijri = Gregorian(today.year, today.month, today.day).to_hijri()
+    return hijri.month == 9  # Ramazon = 9-oy hijriy taqvimda
 
 def get_ramadan_progress():
+    """Ramazon kunlari progressini hijri_converter yordamida hisoblash"""
+    from hijri_converter import Gregorian, Hijri
+    from datetime import timedelta
     today = date.today()
     try:
-        hijri = Hijri(today.year, today.month, today.day)
-        if hijri.month != 9:
+        hijri = Gregorian(today.year, today.month, today.day).to_hijri()
+        if hijri.month != 9:  # Ramazon = 9-oy
             return None
         day = hijri.day
-        # Assume 30 days
-        left = 30 - day
-        # Approximate end date
-        end_date = today.replace(day=today.day + left)
+        # Ramazon 29 yoki 30 kun bo'lishi mumkin
+        # Keyingi oyning 1-kunini topamiz
+        if day <= 29:
+            # Ramazon oxirini hisoblash: keyingi oy boshlanguncha
+            next_month_hijri = Hijri(hijri.year, 10, 1)  # Shavvol 1
+            next_month_gregorian = next_month_hijri.to_gregorian()
+            end_date = date(next_month_gregorian.year, next_month_gregorian.month, next_month_gregorian.day)
+            left = (end_date - today).days
+        else:
+            left = 0
+            end_date = today
         return day, left, end_date.strftime("%Y-%m-%d")
-    except OverflowError:
+    except Exception as e:
+        import logging
+        logging.error(f"Ramazon progressini hisoblashda xato: {e}")
         return None
 
 def get_next_prayer(timings):
@@ -294,14 +313,19 @@ def generate_next_prayer_image(title, prayer_name, time_str, remaining_str, lang
     
     draw = ImageDraw.Draw(image)
     
-    # Try to load font
+    # Try to load font - reasonable sizes for 600x400 image
     try:
-        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
-        font = ImageFont.truetype(font_path, 800)
-        small_font = ImageFont.truetype(font_path, 700)
+        font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
+        font = ImageFont.truetype(font_path, 36)
+        small_font = ImageFont.truetype(font_path, 28)
     except:
-        font = ImageFont.load_default()
-        small_font = ImageFont.load_default()
+        try:
+            font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+            font = ImageFont.truetype(font_path, 36)
+            small_font = ImageFont.truetype(font_path, 28)
+        except:
+            font = ImageFont.load_default()
+            small_font = ImageFont.load_default()
     
     # Title
     bbox = draw.textbbox((0, 0), title, font=font)

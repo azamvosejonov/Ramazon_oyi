@@ -58,7 +58,9 @@ translations = {
         'fasting_end_button': "🌇 Ro'za ochish",
         'not_ramadan': "Hozir Ramazon oyi emas. Iltimos, Ramazon oyida qaytadan urinib ko'ring.",
         'prayer_notification': "🕌 Namoz vaqti keldi: {prayer}",
+        'city_selected': "Shahar tanlandi: {city}",
         'early_iftar': "🕰 Iftorga 2 daqiqa qoldi! Tayyorgarlik ko'ring.",
+        'early_sahur': "🌙 Saharlikka 30 daqiqa qoldi! Tayyorgarlik ko'ring.",
         'late_fasting_start': "⏰ Ro'za boshlash vaqti o'tib ketdi. Ertaga harakat qiling.",
         'prayers': {
             'Fajr': 'Bomdod ',
@@ -94,7 +96,9 @@ translations = {
         'fasting_end_button': "🌇 Break Fast",
         'not_ramadan': "It's not Ramadan month yet. Please try again during Ramadan.",
         'prayer_notification': "🕌 Prayer time: {prayer}",
+        'city_selected': "City selected: {city}",
         'early_iftar': "🕰 2 minutes to Iftar! Get ready.",
+        'early_sahur': "🌙 30 minutes until Suhoor ends! Get ready.",
         'late_fasting_start': "⏰ Fasting start time has passed. Try tomorrow.",
         'prayers': {
             'Fajr': 'Fajr ',
@@ -130,7 +134,9 @@ translations = {
         'fasting_end_button': "🌇 Разговение",
         'not_ramadan': "Сейчас не месяц Рамадан. Пожалуйста, попробуйте снова во время Рамадана.",
         'prayer_notification': "🕌 Время намаза: {prayer}",
+        'city_selected': "Город выбран: {city}",
         'early_iftar': "🕰 До ифтара 2 минуты! Готовьтесь.",
+        'early_sahur': "🌙 До сухура осталось 30 минут! Готовьтесь.",
         'late_fasting_start': "⏰ Время начала поста прошло. Попробуйте завтра.",
         'prayers': {
             'Fajr': 'Фаджр ',

@@ -345,6 +345,20 @@ async def schedule_daily_tasks(user_data=None):
             # Schedule fasting start at imsak
             if 'Imsak' in timings:
                 imsak_h, imsak_m = map(int, timings['Imsak'].split(':'))
+                
+                # Early sahur reminder: 30 minutes before imsak
+                from datetime import datetime, time, timedelta, date
+                imsak_dt = datetime.combine(date.today(), time(imsak_h, imsak_m))
+                early_sahur_dt = imsak_dt - timedelta(minutes=30)
+                scheduler.add_job(
+                    send_early_sahur,
+                    CronTrigger(hour=early_sahur_dt.hour, minute=early_sahur_dt.minute), 
+                    args=[chat_id],
+                    id=f'early_sahur_{chat_id}', 
+                    replace_existing=True
+                )
+                
+                # Fasting start at imsak
                 scheduler.add_job(
                     send_fasting_start,
                     CronTrigger(hour=imsak_h, minute=imsak_m), 
@@ -354,8 +368,6 @@ async def schedule_daily_tasks(user_data=None):
                 )
                 
                 # Late reminder: 30 minutes after imsak
-                from datetime import datetime, time, timedelta, date
-                imsak_dt = datetime.combine(date.today(), time(imsak_h, imsak_m))
                 late_dt = imsak_dt + timedelta(minutes=30)
                 scheduler.add_job(
                     send_late_fasting_start,

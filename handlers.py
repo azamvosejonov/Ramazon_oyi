@@ -5,7 +5,7 @@ from datetime import datetime
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.error import BadRequest
 from config import translations, CITIES
-from utils import get_prayer_times, get_ramadan_progress, get_next_prayer, calculate_remaining_time, is_ramadan, generate_next_prayer_image, generate_dua_image
+from utils import get_prayer_times, get_ramadan_progress, get_next_prayer, calculate_remaining_time, is_ramadan, generate_next_prayer_image, generate_dua_image, get_local_datetime, get_local_time
 
 USER_DATA_FILE = 'user_data.json'
 
@@ -153,10 +153,9 @@ async def button(update, context):
             reply_markup = InlineKeyboardMarkup(keyboard)
             await query.edit_message_text(text=text, reply_markup=reply_markup)
         else:
-            from datetime import datetime
             city_key = user_data.get(str(chat_id), {}).get('city', 'tashkent')
             timings = await get_prayer_times(city_key)
-            now = datetime.now().time()
+            now = get_local_time()
             fajr_time = datetime.strptime(timings['Fajr'], '%H:%M').time()
             maghrib_time = datetime.strptime(timings['Maghrib'], '%H:%M').time()
             if now < fajr_time:
@@ -233,6 +232,8 @@ async def button(update, context):
             [InlineKeyboardButton(translations[lang]['fasting_end_button'], callback_data='fasting_end')],
             [InlineKeyboardButton(translations[lang]['change_city_button'], callback_data='change_city')],
         ]
+        if is_admin(chat_id):
+            keyboard.append([InlineKeyboardButton('👨‍💻 Admin Panel', callback_data='admin_panel')])
         reply_markup = InlineKeyboardMarkup(keyboard)
         try:
             message = await query.edit_message_text(text=text, reply_markup=reply_markup)
@@ -280,8 +281,7 @@ async def button(update, context):
         lang = user_data.get(str(chat_id), {}).get('lang', 'uz')
         city_key = user_data.get(str(chat_id), {}).get('city', 'tashkent')
         timings = await get_prayer_times(city_key)
-        from datetime import datetime
-        now = datetime.now().time()
+        now = get_local_time()
         fajr_time = datetime.strptime(timings['Fajr'], '%H:%M').time()
         maghrib_time = datetime.strptime(timings['Maghrib'], '%H:%M').time()
         if now < fajr_time:
@@ -304,56 +304,14 @@ async def button(update, context):
             else:
                 raise
 
-    elif data == 'back_to_menu':
-        lang = user_data.get(str(chat_id), {}).get('lang', 'uz')
-        text = translations[lang]['menu_msg']
-        keyboard = [
-            [InlineKeyboardButton(translations[lang]['iftar_button'], callback_data='iftar')],
-            [InlineKeyboardButton(translations[lang]['next_prayer_button'], callback_data='next_prayer')],
-            [InlineKeyboardButton(translations[lang]['ramadan_button'], callback_data='ramadan')],
-            [InlineKeyboardButton(translations[lang]['fasting_start_button'], callback_data='fasting_start')],
-            [InlineKeyboardButton(translations[lang]['fasting_end_button'], callback_data='fasting_end')],
-            [InlineKeyboardButton(translations[lang]['change_city_button'], callback_data='change_city')],
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        try:
-            message = await query.edit_message_text(text=text, reply_markup=reply_markup)
-            user_data[str(chat_id)]['menu_msg'] = message.message_id
-        except BadRequest:
-            # If message is media, send new message
-            message = await query.message.reply_text(text=text, reply_markup=reply_markup)
-            user_data[str(chat_id)]['menu_msg'] = message.message_id
-
-    elif data == 'back_to_menu':
-        lang = user_data.get(str(chat_id), {}).get('lang', 'uz')
-        text = translations[lang]['menu_msg']
-        keyboard = [
-            [InlineKeyboardButton(translations[lang]['iftar_button'], callback_data='iftar')],
-            [InlineKeyboardButton(translations[lang]['next_prayer_button'], callback_data='next_prayer')],
-            [InlineKeyboardButton(translations[lang]['ramadan_button'], callback_data='ramadan')],
-            [InlineKeyboardButton(translations[lang]['fasting_start_button'], callback_data='fasting_start')],
-            [InlineKeyboardButton(translations[lang]['fasting_end_button'], callback_data='fasting_end')],
-            [InlineKeyboardButton(translations[lang]['change_city_button'], callback_data='change_city')],]
-        if is_admin(chat_id):
-            keyboard.append([InlineKeyboardButton('Admin Panel', callback_data='admin_panel')])
-
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        try:
-            message = await query.edit_message_text(text=text, reply_markup=reply_markup)
-            user_data[str(chat_id)]['menu_msg'] = message.message_id
-        except BadRequest:
-            # If message is media, send new message
-            message = await query.message.reply_text(text=text, reply_markup=reply_markup)
-            user_data[str(chat_id)]['menu_msg'] = message.message_id
-
     elif data == 'user_stats':
         if not is_admin(chat_id):
             await query.answer("Siz admin emassiz!")
             return
         total_users = len(user_data)
-        from datetime import datetime
-        active_today = sum(1 for u in user_data.values() if u.get('last_seen', '').startswith(datetime.now().date().isoformat()))
-        new_today = sum(1 for u in user_data.values() if u.get('last_seen', '').startswith(datetime.now().date().isoformat()) and not u.get('lang'))
+        today = get_local_datetime().date().isoformat()
+        active_today = sum(1 for u in user_data.values() if u.get('last_seen', '').startswith(today))
+        new_today = sum(1 for u in user_data.values() if u.get('last_seen', '').startswith(today) and not u.get('lang'))
         text = f"Umumiy foydalanuvchilar: {total_users}\nBugun faollar: {active_today}\nBugun yangilar: {new_today}"
         keyboard = [[InlineKeyboardButton("Orqaga", callback_data='admin_panel')]]
         reply_markup = InlineKeyboardMarkup(keyboard)
@@ -406,10 +364,8 @@ Barcha foydalanuvchilarga yuboriladi."""
             return
             
         # Import datetime here to ensure it's available in the local scope
-        from datetime import datetime
-        
         total_users = len(user_data)
-        today = datetime.now().date().isoformat()
+        today = get_local_datetime().date().isoformat()
         active_today = 0
         
         # Safely count active users today
@@ -718,6 +674,48 @@ async def handle_message(update, context):
         
     # Handle non-admin or regular messages
     # ... (rest of your existing handle_message function)
+
+async def send_menu(chat_id, bot=None, update_existing=False):
+    """Send or update menu for a user - used by scheduler"""
+    from telegram import Bot
+    from config import BOT_TOKEN
+    
+    if bot is None:
+        bot = Bot(token=BOT_TOKEN)
+    
+    lang = user_data.get(str(chat_id), {}).get('lang', 'uz')
+    text = translations[lang]['menu_msg']
+    
+    keyboard = [
+        [InlineKeyboardButton(translations[lang]['iftar_button'], callback_data='iftar')],
+        [InlineKeyboardButton(translations[lang]['next_prayer_button'], callback_data='next_prayer')],
+        [InlineKeyboardButton(translations[lang]['ramadan_button'], callback_data='ramadan')],
+        [InlineKeyboardButton(translations[lang]['fasting_start_button'], callback_data='fasting_start')],
+        [InlineKeyboardButton(translations[lang]['fasting_end_button'], callback_data='fasting_end')],
+        [InlineKeyboardButton(translations[lang]['change_city_button'], callback_data='change_city')],
+    ]
+    if is_admin(chat_id):
+        keyboard.append([InlineKeyboardButton('👨‍💻 Admin Panel', callback_data='admin_panel')])
+    
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    
+    if update_existing and 'menu_msg' in user_data.get(str(chat_id), {}):
+        try:
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=user_data[str(chat_id)]['menu_msg'],
+                text=text,
+                reply_markup=reply_markup
+            )
+        except BadRequest:
+            # If edit fails, send new message
+            message = await bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
+            user_data[str(chat_id)]['menu_msg'] = message.message_id
+            save_user_data(user_data)
+    else:
+        message = await bot.send_message(chat_id=chat_id, text=text, reply_markup=reply_markup)
+        user_data[str(chat_id)]['menu_msg'] = message.message_id
+        save_user_data(user_data)
 
 async def admin_command(update, context):
     chat_id = update.effective_chat.id
